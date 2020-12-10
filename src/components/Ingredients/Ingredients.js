@@ -6,11 +6,15 @@ import IngredientList from "./IngredientList";
 import Search from "./Search";
 
 const Ingredients = () => {
-	const [ingredients, setIngredients] = useState([]);
+	const [userIngredients, setUserIngredients] = useState([]);
 
 	const filteredIngredientHandler = useCallback((filteredIngredients) => {
-		setIngredients(filteredIngredients);
+		setUserIngredients(filteredIngredients);
 	}, []);
+
+	useEffect(() => {
+		console.log("RENDERING INGREDIENTS", userIngredients);
+	}, [userIngredients]);
 
 	const addIngredientHandler = (ingredient) => {
 		axios
@@ -22,10 +26,24 @@ const Ingredients = () => {
 				return response.data.name;
 			})
 			.then((name) => {
-				setIngredients((prevIngredients) => [
+				setUserIngredients((prevIngredients) => [
 					...prevIngredients,
 					{ id: name, ...ingredient },
 				]);
+			});
+	};
+
+	const removeIngredientHandler = (ingredientId) => {
+		axios
+			.delete(
+				`https://intro-hooks-default-rtdb.firebaseio.com/ingredient/${ingredientId}.json`
+			)
+			.then((response) => {
+				setUserIngredients((prevIngredients) =>
+					prevIngredients.filter(
+						(ingredient) => ingredient.id !== ingredientId
+					)
+				);
 			});
 	};
 
@@ -36,8 +54,8 @@ const Ingredients = () => {
 			<section>
 				<Search onLoadIngredient={filteredIngredientHandler} />
 				<IngredientList
-					ingredients={ingredients}
-					onRemoveItem={() => {}}
+					ingredients={userIngredients}
+					onRemoveItem={removeIngredientHandler}
 				/>
 			</section>
 		</div>
