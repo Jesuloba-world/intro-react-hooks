@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useReducer } from "react";
+import React, { useEffect, useCallback, useReducer } from "react";
 import axios from "axios";
 
 import IngredientForm from "./IngredientForm";
@@ -19,18 +19,33 @@ const ingredientReducer = (currentIngredients, action) => {
 	}
 };
 
+const httpReducer = (curHttpState, action) => {
+	switch (action.type) {
+		case "SEND":
+			return { loading: true, error: null };
+		case "RESPONSE":
+			return { ...curHttpState, loading: false };
+		case "ERROR":
+			return { loading: false, error: action.error };
+		case "CLEAR":
+			return { ...curHttpState, error: null };
+		default:
+			throw new Error("this is not supposed to happen");
+	}
+};
+
 const Ingredients = () => {
 	const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
-	// const [userIngredients, setUserIngredients] = useState([]);
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState();
+	const [httpState, dispatchHttp] = useReducer(httpReducer, {
+		loading: false,
+		error: null,
+	});
 
 	useEffect(() => {
 		console.log("RENDERING INGREDIENTS", userIngredients);
 	}, [userIngredients]);
 
 	const filteredIngredientHandler = useCallback((filteredIngredients) => {
-		// setUserIngredients(filteredIngredients);
 		dispatch({
 			type: "SET",
 			ingredients: filteredIngredients,
@@ -38,21 +53,17 @@ const Ingredients = () => {
 	}, []);
 
 	const addIngredientHandler = (ingredient) => {
-		setIsLoading(true);
+		dispatchHttp({ type: "SEND" });
 		axios
 			.post(
 				"https://intro-hooks-default-rtdb.firebaseio.com/ingredient.json",
 				ingredient
 			)
 			.then((response) => {
-				setIsLoading(false);
+				dispatchHttp({ type: "RESPONSE" });
 				return response.data.name;
 			})
 			.then((name) => {
-				// setUserIngredients((prevIngredients) => [
-				// 	...prevIngredients,
-				// 	{ id: name, ...ingredient },
-				// ]);
 				dispatch({
 					type: "ADD",
 					ingredient: { id: name, ...ingredient },
@@ -61,40 +72,36 @@ const Ingredients = () => {
 	};
 
 	const removeIngredientHandler = (ingredientId) => {
-		setIsLoading(true);
+		dispatchHttp({ type: "SEND" });
 		axios
 			.delete(
 				`https://intro-hooks-default-rtdb.firebaseio.com/ingredient/${ingredientId}.json`
 			)
 			.then((response) => {
-				setIsLoading(false);
-				// setUserIngredients((prevIngredients) =>
-				// 	prevIngredients.filter(
-				// 		(ingredient) => ingredient.id !== ingredientId
-				// 	)
-				// );
+				dispatchHttp({ type: "RESPONSE" });
 				dispatch({
 					type: "DELETE",
 					id: ingredientId,
 				});
 			})
 			.catch((error) => {
-				setError(error.message);
-				setIsLoading(false);
+				dispatchHttp({ type: "ERROR", error: error.message });
 			});
 	};
 
 	const clearError = () => {
-		setError(null);
+		dispatchHttp({ type: "CLEAR" });
 	};
 
 	return (
 		<div className="App">
-			{error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
+			{httpState.error && (
+				<ErrorModal onClose={clearError}>{httpState.error}</ErrorModal>
+			)}
 
 			<IngredientForm
 				onAddIngredient={addIngredientHandler}
-				loading={isLoading}
+				loading={httpState.loading}
 			/>
 
 			<section>
