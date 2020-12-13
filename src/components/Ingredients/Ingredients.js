@@ -22,11 +22,25 @@ const ingredientReducer = (currentIngredients, action) => {
 
 const Ingredients = () => {
 	const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
-	const { isLoading, data, error, sendRequest } = useHttp();
+	const {
+		isLoading,
+		data,
+		error,
+		sendRequest,
+		reqExtra,
+		reqIdentifier,
+	} = useHttp();
 
 	useEffect(() => {
-		console.log("RENDERING INGREDIENTS", userIngredients);
-	}, [userIngredients]);
+		if (!isLoading && reqIdentifier === "REMOVE") {
+			dispatch({ type: "DELETE", id: reqExtra });
+		} else if (!isLoading && !error && reqIdentifier === "ADD") {
+			dispatch({
+				type: "ADD",
+				ingredient: { id: data.name, ...reqExtra },
+			});
+		}
+	}, [data, reqExtra, reqIdentifier, isLoading, error]);
 
 	const filteredIngredientHandler = useCallback((filteredIngredients) => {
 		dispatch({
@@ -35,30 +49,43 @@ const Ingredients = () => {
 		});
 	}, []);
 
-	const addIngredientHandler = useCallback((ingredient) => {
-		// dispatchHttp({ type: "SEND" });
-		// axios
-		// 	.post(
-		// 		"https://intro-hooks-default-rtdb.firebaseio.com/ingredient.json",
-		// 		ingredient
-		// 	)
-		// 	.then((response) => {
-		// 		dispatchHttp({ type: "RESPONSE" });
-		// 		return response.data.name;
-		// 	})
-		// 	.then((name) => {
-		// 		dispatch({
-		// 			type: "ADD",
-		// 			ingredient: { id: name, ...ingredient },
-		// 		});
-		// 	});
-	}, []);
+	const addIngredientHandler = useCallback(
+		(ingredient) => {
+			sendRequest(
+				"https://intro-hooks-default-rtdb.firebaseio.com/ingredient.json",
+				"post",
+				ingredient,
+				ingredient,
+				"ADD"
+			);
+			// dispatchHttp({ type: "SEND" });
+			// axios
+			// 	.post(
+			// 		"https://intro-hooks-default-rtdb.firebaseio.com/ingredient.json",
+			// 		ingredient
+			// 	)
+			// 	.then((response) => {
+			// 		dispatchHttp({ type: "RESPONSE" });
+			// 		return response.data.name;
+			// 	})
+			// 	.then((name) => {
+			// 		dispatch({
+			// 			type: "ADD",
+			// 			ingredient: { id: name, ...ingredient },
+			// 		});
+			// 	});
+		},
+		[sendRequest]
+	);
 
 	const removeIngredientHandler = useCallback(
 		(ingredientId) => {
 			sendRequest(
 				`https://intro-hooks-default-rtdb.firebaseio.com/ingredient/${ingredientId}.json`,
-				"delete"
+				"delete",
+				null,
+				ingredientId,
+				"REMOVE"
 			);
 		},
 		[sendRequest]

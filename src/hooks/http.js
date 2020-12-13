@@ -4,12 +4,19 @@ import axios from "axios";
 const httpReducer = (curHttpState, action) => {
 	switch (action.type) {
 		case "SEND":
-			return { loading: true, error: null, data: null };
+			return {
+				loading: true,
+				error: null,
+				data: null,
+				extra: null,
+				identifier: action.identifier,
+			};
 		case "RESPONSE":
 			return {
 				...curHttpState,
 				loading: false,
 				data: action.responseData,
+				extra: action.extra,
 			};
 		case "ERROR":
 			return { ...curHttpState, loading: false, error: action.error };
@@ -25,27 +32,35 @@ const useHttp = () => {
 		loading: false,
 		error: null,
 		data: null,
+		extra: null,
+		identifier: null,
 	});
 
-	const sendRequest = useCallback((url, method, body) => {
-		dispatchHttp({ type: "SEND" });
-		axios[method](url)
-			.then((response) => {
-				return response.json;
-			})
-			.then((responseData) => {
-				dispatchHttp({ type: "RESPONSE", responseData: responseData });
-			})
-			.catch((error) => {
-				dispatchHttp({ type: "ERROR", error: error.message });
-			});
-	}, []);
+	const sendRequest = useCallback(
+		(url, method, body, reqExtra, reqIdentifier) => {
+			dispatchHttp({ type: "SEND", identifier: reqIdentifier });
+			axios[method](url, body)
+				.then((response) => {
+					dispatchHttp({
+						type: "RESPONSE",
+						responseData: response.data,
+						extra: reqExtra,
+					});
+				})
+				.catch((error) => {
+					dispatchHttp({ type: "ERROR", error: error.message });
+				});
+		},
+		[]
+	);
 
 	return {
 		isLoading: httpState.loading,
 		data: httpState.data,
 		error: httpState.error,
 		sendRequest: sendRequest,
+		reqExtra: httpState.extra,
+		reqIdentifier: httpState.identifier,
 	};
 };
 
