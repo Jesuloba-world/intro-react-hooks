@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useReducer } from "react";
+import React, { useEffect, useCallback, useReducer, useMemo } from "react";
 import axios from "axios";
 
 import IngredientForm from "./IngredientForm";
@@ -52,7 +52,7 @@ const Ingredients = () => {
 		});
 	}, []);
 
-	const addIngredientHandler = (ingredient) => {
+	const addIngredientHandler = useCallback((ingredient) => {
 		dispatchHttp({ type: "SEND" });
 		axios
 			.post(
@@ -69,9 +69,9 @@ const Ingredients = () => {
 					ingredient: { id: name, ...ingredient },
 				});
 			});
-	};
+	}, []);
 
-	const removeIngredientHandler = (ingredientId) => {
+	const removeIngredientHandler = useCallback((ingredientId) => {
 		dispatchHttp({ type: "SEND" });
 		axios
 			.delete(
@@ -87,11 +87,20 @@ const Ingredients = () => {
 			.catch((error) => {
 				dispatchHttp({ type: "ERROR", error: error.message });
 			});
-	};
+	}, []);
 
-	const clearError = () => {
+	const clearError = useCallback(() => {
 		dispatchHttp({ type: "CLEAR" });
-	};
+	}, []);
+
+	const ingredientList = useMemo(() => {
+		return (
+			<IngredientList
+				ingredients={userIngredients}
+				onRemoveItem={removeIngredientHandler}
+			/>
+		);
+	}, [userIngredients, removeIngredientHandler]);
 
 	return (
 		<div className="App">
@@ -106,10 +115,7 @@ const Ingredients = () => {
 
 			<section>
 				<Search onLoadIngredient={filteredIngredientHandler} />
-				<IngredientList
-					ingredients={userIngredients}
-					onRemoveItem={removeIngredientHandler}
-				/>
+				{ingredientList}
 			</section>
 		</div>
 	);
