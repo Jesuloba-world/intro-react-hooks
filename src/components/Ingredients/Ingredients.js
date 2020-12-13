@@ -5,6 +5,7 @@ import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
 import Search from "./Search";
 import ErrorModal from "../UI/ErrorModal";
+import useHttp from "../../hooks/http";
 
 const ingredientReducer = (currentIngredients, action) => {
 	switch (action.type) {
@@ -19,27 +20,9 @@ const ingredientReducer = (currentIngredients, action) => {
 	}
 };
 
-const httpReducer = (curHttpState, action) => {
-	switch (action.type) {
-		case "SEND":
-			return { loading: true, error: null };
-		case "RESPONSE":
-			return { ...curHttpState, loading: false };
-		case "ERROR":
-			return { loading: false, error: action.error };
-		case "CLEAR":
-			return { ...curHttpState, error: null };
-		default:
-			throw new Error("this is not supposed to happen");
-	}
-};
-
 const Ingredients = () => {
 	const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
-	const [httpState, dispatchHttp] = useReducer(httpReducer, {
-		loading: false,
-		error: null,
-	});
+	const { isLoading, data, error, sendRequest } = useHttp();
 
 	useEffect(() => {
 		console.log("RENDERING INGREDIENTS", userIngredients);
@@ -53,44 +36,36 @@ const Ingredients = () => {
 	}, []);
 
 	const addIngredientHandler = useCallback((ingredient) => {
-		dispatchHttp({ type: "SEND" });
-		axios
-			.post(
-				"https://intro-hooks-default-rtdb.firebaseio.com/ingredient.json",
-				ingredient
-			)
-			.then((response) => {
-				dispatchHttp({ type: "RESPONSE" });
-				return response.data.name;
-			})
-			.then((name) => {
-				dispatch({
-					type: "ADD",
-					ingredient: { id: name, ...ingredient },
-				});
-			});
+		// dispatchHttp({ type: "SEND" });
+		// axios
+		// 	.post(
+		// 		"https://intro-hooks-default-rtdb.firebaseio.com/ingredient.json",
+		// 		ingredient
+		// 	)
+		// 	.then((response) => {
+		// 		dispatchHttp({ type: "RESPONSE" });
+		// 		return response.data.name;
+		// 	})
+		// 	.then((name) => {
+		// 		dispatch({
+		// 			type: "ADD",
+		// 			ingredient: { id: name, ...ingredient },
+		// 		});
+		// 	});
 	}, []);
 
-	const removeIngredientHandler = useCallback((ingredientId) => {
-		dispatchHttp({ type: "SEND" });
-		axios
-			.delete(
-				`https://intro-hooks-default-rtdb.firebaseio.com/ingredient/${ingredientId}.json`
-			)
-			.then((response) => {
-				dispatchHttp({ type: "RESPONSE" });
-				dispatch({
-					type: "DELETE",
-					id: ingredientId,
-				});
-			})
-			.catch((error) => {
-				dispatchHttp({ type: "ERROR", error: error.message });
-			});
-	}, []);
+	const removeIngredientHandler = useCallback(
+		(ingredientId) => {
+			sendRequest(
+				`https://intro-hooks-default-rtdb.firebaseio.com/ingredient/${ingredientId}.json`,
+				"delete"
+			);
+		},
+		[sendRequest]
+	);
 
 	const clearError = useCallback(() => {
-		dispatchHttp({ type: "CLEAR" });
+		// dispatchHttp({ type: "CLEAR" });
 	}, []);
 
 	const ingredientList = useMemo(() => {
@@ -104,13 +79,11 @@ const Ingredients = () => {
 
 	return (
 		<div className="App">
-			{httpState.error && (
-				<ErrorModal onClose={clearError}>{httpState.error}</ErrorModal>
-			)}
+			{error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
 
 			<IngredientForm
 				onAddIngredient={addIngredientHandler}
-				loading={httpState.loading}
+				loading={isLoading}
 			/>
 
 			<section>
