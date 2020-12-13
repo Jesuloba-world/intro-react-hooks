@@ -1,5 +1,4 @@
 import React, { useEffect, useCallback, useReducer, useMemo } from "react";
-import axios from "axios";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -29,6 +28,7 @@ const Ingredients = () => {
 		sendRequest,
 		reqExtra,
 		reqIdentifier,
+		clear,
 	} = useHttp();
 
 	useEffect(() => {
@@ -58,22 +58,6 @@ const Ingredients = () => {
 				ingredient,
 				"ADD"
 			);
-			// dispatchHttp({ type: "SEND" });
-			// axios
-			// 	.post(
-			// 		"https://intro-hooks-default-rtdb.firebaseio.com/ingredient.json",
-			// 		ingredient
-			// 	)
-			// 	.then((response) => {
-			// 		dispatchHttp({ type: "RESPONSE" });
-			// 		return response.data.name;
-			// 	})
-			// 	.then((name) => {
-			// 		dispatch({
-			// 			type: "ADD",
-			// 			ingredient: { id: name, ...ingredient },
-			// 		});
-			// 	});
 		},
 		[sendRequest]
 	);
@@ -91,10 +75,6 @@ const Ingredients = () => {
 		[sendRequest]
 	);
 
-	const clearError = useCallback(() => {
-		// dispatchHttp({ type: "CLEAR" });
-	}, []);
-
 	const ingredientList = useMemo(() => {
 		return (
 			<IngredientList
@@ -106,7 +86,7 @@ const Ingredients = () => {
 
 	return (
 		<div className="App">
-			{error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
+			{error && <ErrorModal onClose={clear}>{error}</ErrorModal>}
 
 			<IngredientForm
 				onAddIngredient={addIngredientHandler}

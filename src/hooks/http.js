@@ -1,6 +1,14 @@
 import { useReducer, useCallback } from "react";
 import axios from "axios";
 
+const initialState = {
+	loading: false,
+	error: null,
+	data: null,
+	extra: null,
+	identifier: null,
+};
+
 const httpReducer = (curHttpState, action) => {
 	switch (action.type) {
 		case "SEND":
@@ -21,20 +29,18 @@ const httpReducer = (curHttpState, action) => {
 		case "ERROR":
 			return { ...curHttpState, loading: false, error: action.error };
 		case "CLEAR":
-			return { ...curHttpState, error: null };
+			return initialState;
 		default:
 			throw new Error("this is not supposed to happen");
 	}
 };
 
 const useHttp = () => {
-	const [httpState, dispatchHttp] = useReducer(httpReducer, {
-		loading: false,
-		error: null,
-		data: null,
-		extra: null,
-		identifier: null,
-	});
+	const [httpState, dispatchHttp] = useReducer(httpReducer, initialState);
+
+	const clear = useCallback(() => {
+		dispatchHttp({ type: "CLEAR" });
+	}, []);
 
 	const sendRequest = useCallback(
 		(url, method, body, reqExtra, reqIdentifier) => {
@@ -61,6 +67,7 @@ const useHttp = () => {
 		sendRequest: sendRequest,
 		reqExtra: httpState.extra,
 		reqIdentifier: httpState.identifier,
+		clear: clear,
 	};
 };
 
